@@ -3,9 +3,10 @@
 #include <complex>
 #include "GraphPlot.h"
 
-GraphPlot::SpectrumPlot::SpectrumPlot(Vec2 pos, int w){
+GraphPlot::SpectrumPlot::SpectrumPlot(Vec2 pos, int w, ColorF color){
 	this->pos = pos;
 	this->w = w;
+	this->color = color;
 }
 
 void GraphPlot::SpectrumPlot::plot(std::vector<double> freq, std::vector<double> spectrum) {
@@ -15,5 +16,5 @@ void GraphPlot::SpectrumPlot::plot(std::vector<double> freq, std::vector<double>
 		specturm_line[i].set(pos.x + freq[i] * (w / freq_max), pos.y - spectrum[i]);
 	}
 
-	specturm_line.draw(2);
+	specturm_line.draw(2, color);
 }
