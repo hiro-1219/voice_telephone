@@ -21,4 +21,13 @@ namespace CodingProcess {
 		std::vector<std::complex<double>> calc_FFT(std::vector<std::complex<double>> f);
 		std::vector<double> calc_FFT_frequency(size_t sr, int N);
 	};
+
+	class IFFT {
+	public:
+		IFFT(std::vector<std::complex<double>> F, size_t sr);
+		std::vector<std::complex<double>> get_IFFT();
+	private:
+		std::vector<std::complex<double>> f;
+		std::vector<std::complex<double>> calc_IFFT(std::vector<std::complex<double>> F, size_t sr);
+	};
 }

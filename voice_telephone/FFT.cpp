@@ -72,3 +72,31 @@ std::vector<double> CodingProcess::FFT::get_amp_spectrum() {
 	return amp_spectrum;
 }
 
+CodingProcess::IFFT::IFFT(std::vector<std::complex<double>> F, size_t sr) {
+	this->f = this->calc_IFFT(F, sr);
+}
+
+std::vector<std::complex<double>> CodingProcess::IFFT::calc_IFFT(std::vector<std::complex<double>> F, size_t sr) {
+	int N = F.size();
+	std::vector<std::complex<double>> F_in(N), f_out(N);
+	for (int i = 0; i < N; i++) {
+		F_in[i] = std::complex<double>(F[i].imag(), F[i].real());
+	}
+	CodingProcess::FFT fft = CodingProcess::FFT(F_in, sr);
+	f_out = fft.get_FFT();
+	for (int i = 0; i < N; i++) {
+		f_out[i] = std::complex<double>(f_out[i].imag() / N, f_out[i].real() / N);
+		if (std::abs(f_out[i].real()) <= 1e-15) {
+			f_out[i] = std::complex<double>(0, f_out[i].imag());
+		}
+		if (std::abs(f_out[i].imag()) <= 1e-15) {
+			f_out[i] = std::complex<double>(f_out[i].real(), 0);
+		}
+	}
+	return f_out;
+}
+
+std::vector<std::complex<double>> CodingProcess::IFFT::get_IFFT() {
+	return this->f;
+}
+
