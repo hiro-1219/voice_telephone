@@ -116,6 +116,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="FFT.cpp" />
+    <ClCompile Include="GraphPlot.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Mic.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -319,6 +320,7 @@
   <ItemGroup>
     <ClInclude Include="constant.h" />
     <ClInclude Include="FFT.h" />
+    <ClInclude Include="GraphPlot.h" />
     <ClInclude Include="Mic.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
