@@ -117,6 +117,7 @@
   <ItemGroup>
     <ClCompile Include="Debug.cpp" />
     <ClCompile Include="FFT.cpp" />
+    <ClCompile Include="GolombRiceCoding.cpp" />
     <ClCompile Include="GraphPlot.cpp" />
     <ClCompile Include="LPC.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -323,6 +324,7 @@
     <ClInclude Include="constant.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="FFT.h" />
+    <ClInclude Include="GolombRiceCoding.h" />
     <ClInclude Include="GraphPlot.h" />
     <ClInclude Include="LPC.h" />
     <ClInclude Include="Mic.h" />

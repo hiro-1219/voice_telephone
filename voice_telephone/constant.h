@@ -4,5 +4,8 @@
 #define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 600
 #define LPC_COEFFICIENT_DIM 20
+#define GOLOMB_RICE_DIVISOR 4
+#define GOLOMB_RICE_SCALE 10000
 
+#define MIC_INDEX 1
 #define DEBUG false

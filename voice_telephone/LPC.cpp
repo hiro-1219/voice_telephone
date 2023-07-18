@@ -39,7 +39,8 @@ std::vector<double> CodingProcess::LPCEncrypt::calc_lpc_encrypt(std::vector<doub
 	var = v[0]; w = v[1];
 	for (int n = 1; n <= p; n++) {
 		std::copy(a.begin(), a.end(), tmp_a.begin());
-		k[n] = w / var;
+		if (var == 0) k[n] = 0;
+		else k[n] = w / var;
 		a[n] = -1 * k[n];
 		for (int i = 1; i <= n - 1; i++) {
 			a[i] = tmp_a[i] - k[n] * tmp_a[n - i];
