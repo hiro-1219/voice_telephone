@@ -29,7 +29,5 @@ namespace CodingProcess {
 		int golomb_rice_decode(std::vector<int> bits, int divisor, int& start_index);
 		std::vector<double> decode_lpc_predict_error(std::vector<unsigned char> encoded, int divisor, double scale);
 		std::vector<int> convert_bytes_to_bits(std::vector<unsigned char> bytes);
-	};
-
-	
+	};	
 }
