@@ -86,8 +86,8 @@ VoiceNetwork::VoicePacket VoiceNetwork::RecvPacket::recv() {
 
 VoiceNetwork::VoicePacket VoiceNetwork::RecvPacket::convert_buffer_to_voice_packet(char* buffer, int buffer_size) {
 	VoiceNetwork::VoicePacket voice_packet;
-	std::vector<unsigned char> vp_pc(buffer, buffer + LPC_COEFFICIENT_DIM * 8 - 1);
-	std::vector<unsigned char> vp_pe(buffer + LPC_COEFFICIENT_DIM * 8, buffer + buffer_size - 1);
+	std::vector<unsigned char> vp_pc(buffer, buffer + LPC_COEFFICIENT_DIM * 8);
+	std::vector<unsigned char> vp_pe(buffer + LPC_COEFFICIENT_DIM * 8, buffer + buffer_size);
 	int pe_length = vp_pe.size();
 	voice_packet.pc = vp_pc;
 	voice_packet.pe = vp_pe;
