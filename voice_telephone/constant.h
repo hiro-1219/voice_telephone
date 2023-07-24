@@ -11,10 +11,11 @@
 #define GOLOMB_RICE_SCALE 1000
 #define BACKGROUND_COLOR Palette::White
 
-#define HOST_NAME "localhost"
+#define HOST_NAME "127.0.0.1"
 #define PORT 12345
 #define IP_TYPE AF_INET
 #define PROTOCOL SOCK_DGRAM
+#define MTU 1500
 
 #define MIC_INDEX 1
 #define DEBUG false

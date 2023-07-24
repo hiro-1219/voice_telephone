@@ -1,7 +1,10 @@
 ﻿#include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <string>
+#include <cmath>
+#include <Siv3D.hpp>
 #include "Network.h"
+#include "constant.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -31,15 +34,10 @@ void VoiceNetwork::SendPacket::close_socket() {
 }
 
 void VoiceNetwork::SendPacket::send(VoiceNetwork::VoicePacket voice_packet){
-	unsigned char* send_packet;
-	send_packet = (unsigned char*)malloc(LPC_COEFFICIENT_DIM + voice_packet.pe_length);
-	if (send_packet == NULL) {
-		std::cerr << "[-] Error: Can't malloc for send packet" << "\n";
-	}
 	std::vector<unsigned char> send_packet_vec = voice_packet.pc;
 	send_packet_vec.insert(send_packet_vec.end(), voice_packet.pe.begin(), voice_packet.pe.end());
-	std::copy(send_packet_vec.begin(), send_packet_vec.end(), send_packet);
-	sendto(this->sock, (const char*)send_packet, LPC_COEFFICIENT_DIM + voice_packet.pe_length, 0, (struct sockaddr*)&this->send_addr, sizeof(this->send_addr));
+	Print << U"send: " << LPC_COEFFICIENT_DIM * 8 + voice_packet.pe_length;
+	sendto(this->sock, reinterpret_cast<const char*>(send_packet_vec.data()), LPC_COEFFICIENT_DIM * 8 + voice_packet.pe_length, 0, (struct sockaddr*)&this->send_addr, sizeof(this->send_addr));
 }
 
 std::vector<unsigned char> VoiceNetwork::convert_double_to_bytes(std::vector<double> x) {
