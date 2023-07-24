@@ -35,9 +35,9 @@ void Main(){
 	const char* hostname = HOST_NAME;
 	Mic::MicInput mic_input = Mic::MicInput(mic, SAMPLES_LENGTH);
 	GraphPlot::SpectrumPlot spec_plot = GraphPlot::SpectrumPlot(Vec2{ 50, WINDOW_HEIGHT - 100}, 900, Palette::Black);
-	VoiceNetwork::SendPacket send_packet = VoiceNetwork::SendPacket(hostname, PORT, IP_TYPE, PROTOCOL);
 
-	int i = 0;
+	VoiceNetwork::SetupWSAStartup wsa_setup = VoiceNetwork::SetupWSAStartup();
+	VoiceNetwork::SendPacket send_packet = VoiceNetwork::SendPacket(hostname, PORT);
 
 	while (System::Update()) {
 		std::vector<std::complex<double>> f = mic_input.get_samples();
@@ -65,6 +65,7 @@ void Main(){
 		voice_packet.pe_length = pe_encode.size();
 		send_packet.send(voice_packet);
 
+
 		/* Golomb-Rice Decoding */
 		/*CodingProcess::GolombRiceDecode gr_decode = CodingProcess::GolombRiceDecode(pe_encode, GOLOMB_RICE_DIVISOR, GOLOMB_RICE_SCALE);
 		std::vector<double> pe_decode = gr_decode.get_decode();*/
@@ -73,7 +74,8 @@ void Main(){
 		/*CodingProcess::LPCDecrypt lpc_d = CodingProcess::LPCDecrypt(pc, pe);
 		std::vector<double> lpc_f = lpc_d.get_f_decrypt();
 		std::vector<std::complex<double>> comp_f = CodingProcess::get_real_to_complex_vector(lpc_f);*/
-		//i++;
 	}
 	send_packet.close_socket();
+	//recv_packet.close_socket();
+	wsa_setup.close_wsa();
 }

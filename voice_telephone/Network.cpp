@@ -8,12 +8,11 @@
 
 #pragma comment(lib, "ws2_32.lib")
 
-VoiceNetwork::SendPacket::SendPacket(const char* hostname, int port, int ip_type, int protocol) {
-	setup_wsadata();
-	setup_send_socket(hostname, port, ip_type, protocol);
+VoiceNetwork::SetupWSAStartup::SetupWSAStartup() {
+	this->setup_wsadata();
 }
 
-int VoiceNetwork::SendPacket::setup_wsadata() {
+int VoiceNetwork::SetupWSAStartup::setup_wsadata() {
 	if (WSAStartup(MAKEWORD(2, 2), &this->wsa_data) != 0) {
 		std::cerr << "[-] Error: WSAStartup()" << "\n";
 		return -1;
@@ -21,23 +20,78 @@ int VoiceNetwork::SendPacket::setup_wsadata() {
 	return 0;
 }
 
-void VoiceNetwork::SendPacket::setup_send_socket(const char* hostname, int port, int ip_type, int protocol) {
-	this->sock = socket(ip_type, protocol, 0);
-	this->send_addr.sin_family = ip_type;
+void VoiceNetwork::SetupWSAStartup::close_wsa() {
+	WSACleanup();
+}
+
+VoiceNetwork::SendPacket::SendPacket(const char* hostname, int port) {
+	setup_send_socket(hostname, port);
+}
+
+
+void VoiceNetwork::SendPacket::setup_send_socket(const char* hostname, int port) {
+	this->sock = socket(AF_INET, SOCK_DGRAM, 0);
+	this->send_addr.sin_family = AF_INET;
 	this->send_addr.sin_port = htons(port);
-	inet_pton(ip_type, hostname, &this->send_addr.sin_addr);
+	inet_pton(AF_INET, hostname, &this->send_addr.sin_addr);
 }
 
 void VoiceNetwork::SendPacket::close_socket() {
 	closesocket(this->sock);
-	WSACleanup();
 }
 
 void VoiceNetwork::SendPacket::send(VoiceNetwork::VoicePacket voice_packet){
 	std::vector<unsigned char> send_packet_vec = voice_packet.pc;
+	Print << U"size pc: " << send_packet_vec.size();
 	send_packet_vec.insert(send_packet_vec.end(), voice_packet.pe.begin(), voice_packet.pe.end());
+	//send_packet_vec.insert(send_packet_vec.end(), end.begin(), end.end());
 	Print << U"send: " << LPC_COEFFICIENT_DIM * 8 + voice_packet.pe_length;
 	sendto(this->sock, reinterpret_cast<const char*>(send_packet_vec.data()), LPC_COEFFICIENT_DIM * 8 + voice_packet.pe_length, 0, (struct sockaddr*)&this->send_addr, sizeof(this->send_addr));
+}
+
+
+VoiceNetwork::RecvPacket::RecvPacket(int port) {
+	this->setup_recv_socket(port);
+}
+
+
+void VoiceNetwork::RecvPacket::setup_recv_socket(int port) {
+	this->sock = socket(AF_INET, SOCK_DGRAM, 0);
+	this->recv_addr.sin_family = AF_INET;
+	this->recv_addr.sin_port = htons(port);
+	this->recv_addr.sin_addr.S_un.S_addr = INADDR_ANY;
+	if (bind(this->sock, (const sockaddr*)&this->recv_addr, sizeof(this->recv_addr)) == SOCKET_ERROR) {
+		std::cerr << "[-] Error: Can't bind sock" << "\n";
+		closesocket(this->sock);
+		WSACleanup();
+	}
+}
+
+
+VoiceNetwork::VoicePacket VoiceNetwork::RecvPacket::recv() {
+	VoiceNetwork::VoicePacket voice_packet;
+	char buffer[RECV_SIZE];
+	memset(buffer, 0, RECV_SIZE);
+	int client_addr_size = sizeof(this->client_addr);
+	int buffer_size = recvfrom(this->sock, buffer, RECV_SIZE, 0, (sockaddr*)&this->client_addr, &client_addr_size);
+	std::vector<unsigned char> buffer_vec(buffer, buffer + sizeof(buffer) - 1);
+	Print << U"recv: " << buffer[0];
+	return voice_packet;
+}
+
+VoiceNetwork::VoicePacket VoiceNetwork::RecvPacket::convert_buffer_to_voice_packet(char* buffer, int buffer_size) {
+	VoiceNetwork::VoicePacket voice_packet;
+	std::vector<unsigned char> vp_pc(buffer, buffer + 160 - 1);
+	std::vector<unsigned char> vp_pe(buffer + 160, buffer + buffer_size - 1);
+	int pe_length = vp_pe.size();
+	voice_packet.pc = vp_pc;
+	voice_packet.pe = vp_pe;
+	voice_packet.pe_length = pe_length;
+	return voice_packet;
+}
+
+void VoiceNetwork::RecvPacket::close_socket() {
+	closesocket(this->sock);
 }
 
 std::vector<unsigned char> VoiceNetwork::convert_double_to_bytes(std::vector<double> x) {
