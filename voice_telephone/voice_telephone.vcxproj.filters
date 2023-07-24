@@ -147,7 +147,7 @@
     <ClCompile Include="FFT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Mic.cpp">
+    <ClCompile Include="AudioInOut.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GraphPlot.cpp">
@@ -800,7 +800,7 @@
     <ClInclude Include="FFT.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Mic.h">
+    <ClInclude Include="AudioInOut.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="constant.h">

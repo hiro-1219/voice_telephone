@@ -12,29 +12,40 @@ namespace VoiceNetwork {
 		std::vector<unsigned char> pc;
 		std::vector<unsigned char> pe;
 		int pe_length;
+	};
 
-		VoicePacket() = default;
+	class SetupWSAStartup {
+	public:
+		SetupWSAStartup();
+		void close_wsa();
+	private:
+		WSAData wsa_data;
+		int setup_wsadata();
 	};
 
 	class SendPacket {
 	public:
-		SendPacket(const char* hostname, int port, int ip_type, int protocol);
+		SendPacket(const char* hostname, int port);
 		void close_socket();
 		void send(VoicePacket voice_packet);
 	private:
-		WSAData wsa_data;
 		SOCKET sock;
 		struct sockaddr_in send_addr;
-		void setup_send_socket(const char* hostname, int port, int ip_type, int protocol);
-		int setup_wsadata();
+		void setup_send_socket(const char* hostname, int port);
 	};
 
-	/*class ReceivePacket {
+	class RecvPacket {
 	public:
-		ReceivePacket();
+		RecvPacket(int port);
+		void close_socket();
+		VoicePacket recv();
 	private:
-		void setup();
-	};*/
+		SOCKET sock;
+		struct sockaddr_in recv_addr;
+		struct sockaddr_in client_addr;
+		void setup_recv_socket(int port);
+		VoicePacket convert_buffer_to_voice_packet(char* buffer, int buffer_size);
+	};
 
 	union Converter {
 		double x_double;
