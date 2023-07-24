@@ -6,7 +6,7 @@
 int main(void) {
 	std::cout << "[+] Start: Voice Telephone server " << "\n";
 	VoiceNetwork::SetupWSAStartup setup_wsa = VoiceNetwork::SetupWSAStartup();
-	VoiceNetwork::RecvPacket recv_packet = VoiceNetwork::RecvPacket(PORT);
+	VoiceNetwork::RecvPacket recv_packet = VoiceNetwork::RecvPacket(RECV_PORT);
 
 	while (1) {
 		recv_packet.recv();
