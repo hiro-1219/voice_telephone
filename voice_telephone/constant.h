@@ -11,12 +11,12 @@
 #define GOLOMB_RICE_SCALE 1000
 #define BACKGROUND_COLOR Palette::White
 
-#define HOST_NAME "127.0.0.1"
+#define HOST_NAME "192.168.100.2"
 #define SEND_PORT 12345
 #define RECV_PORT 12346
 #define RECV_SIZE 7000
 
-#define MIC_INDEX 1
+#define MIC_INDEX 2
 #define BUFFER_NUM 10
 
 #define DEBUG false

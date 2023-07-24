@@ -19,6 +19,8 @@ void speaker_output_thread(AudioInOut::SpeakerOutput speaker_out, int sr) {
 	VoiceNetwork::RecvPacket recv_packet = VoiceNetwork::RecvPacket(RECV_PORT);
 	while (1) {
 		VoiceNetwork::VoicePacket voice_packet = recv_packet.recv();
+		Print << U"recv pc_size: " << voice_packet.pc.size();
+		Print << U"recv pe_size: " << voice_packet.pe.size();
 		std::vector<double> pc_decode = VoiceNetwork::convert_bytes_to_double(voice_packet.pc);
 
 		/* Golomb-Rice Decoding */
