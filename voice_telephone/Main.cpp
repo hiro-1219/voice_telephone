@@ -6,13 +6,14 @@
 #include "LPC.h"
 #include "GolombRiceCoding.h"
 #include "Network.h"
-#include "Mic.h"
+#include "AudioInOut.h"
 #include "Debug.h"
 #include "GraphPlot.h"
 #include "constant.h"
 
 
 VoiceNetwork::VoicePacket voice_packet = VoiceNetwork::VoicePacket();
+std::vector<std::vector<double>> play_f(BUFFER_NUM, std::vector<double>(SAMPLES_LENGTH));
 
 void Main(){
 	Scene::SetBackground(BACKGROUND_COLOR);
@@ -26,14 +27,15 @@ void Main(){
 	Debug::show_system_mic();
 #endif
 
-	const Microphone mic{ MIC_INDEX, 48000, 5s, Loop::Yes, StartImmediately::Yes };
+	const Microphone mic{ MIC_INDEX, SAMPLE_RATE, 5s, Loop::Yes, StartImmediately::Yes };
 	const size_t sr = mic.getSampleRate();
 	if (not mic.isRecording()) {
 		throw Error{U"Failed to start recording"};
 	}
 
 	const char* hostname = HOST_NAME;
-	Mic::MicInput mic_input = Mic::MicInput(mic, SAMPLES_LENGTH);
+	AudioInOut::MicInput mic_input = AudioInOut::MicInput(mic, SAMPLES_LENGTH);
+    AudioInOut::SpeakerOutput speaker_out = AudioInOut::SpeakerOutput();
 	GraphPlot::SpectrumPlot spec_plot = GraphPlot::SpectrumPlot(Vec2{ 50, WINDOW_HEIGHT - 100}, 900, Palette::Black);
 
 	VoiceNetwork::SetupWSAStartup wsa_setup = VoiceNetwork::SetupWSAStartup();
@@ -66,14 +68,17 @@ void Main(){
 		send_packet.send(voice_packet);
 
 
+		speaker_out.play(real_f);
 		/* Golomb-Rice Decoding */
-		/*CodingProcess::GolombRiceDecode gr_decode = CodingProcess::GolombRiceDecode(pe_encode, GOLOMB_RICE_DIVISOR, GOLOMB_RICE_SCALE);
-		std::vector<double> pe_decode = gr_decode.get_decode();*/
+		CodingProcess::GolombRiceDecode gr_decode = CodingProcess::GolombRiceDecode(pe_encode, GOLOMB_RICE_DIVISOR, GOLOMB_RICE_SCALE);
+		std::vector<double> pe_decode = gr_decode.get_decode();
 
 		/* LPC decrypt */
-		/*CodingProcess::LPCDecrypt lpc_d = CodingProcess::LPCDecrypt(pc, pe);
+		CodingProcess::LPCDecrypt lpc_d = CodingProcess::LPCDecrypt(pc, pe);
 		std::vector<double> lpc_f = lpc_d.get_f_decrypt();
-		std::vector<std::complex<double>> comp_f = CodingProcess::get_real_to_complex_vector(lpc_f);*/
+		//std::vector<std::complex<double>> comp_f = CodingProcess::get_real_to_complex_vector(lpc_f);
+
+		//speaker_out.play(lpc_f);
 	}
 	send_packet.close_socket();
 	//recv_packet.close_socket();

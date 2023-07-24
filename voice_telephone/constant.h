@@ -2,6 +2,7 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 
+#define SAMPLE_RATE 48000
 #define SAMPLES_LENGTH 1024
 #define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 600
@@ -15,4 +16,6 @@
 #define RECV_SIZE 7000
 
 #define MIC_INDEX 1
+#define BUFFER_NUM 10
+
 #define DEBUG false

@@ -122,7 +122,7 @@
     <ClCompile Include="GraphPlot.cpp" />
     <ClCompile Include="LPC.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Mic.cpp" />
+    <ClCompile Include="AudioInOut.cpp" />
     <ClCompile Include="Network.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -329,7 +329,7 @@
     <ClInclude Include="GolombRiceCoding.h" />
     <ClInclude Include="GraphPlot.h" />
     <ClInclude Include="LPC.h" />
-    <ClInclude Include="Mic.h" />
+    <ClInclude Include="AudioInOut.h" />
     <ClInclude Include="Network.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
