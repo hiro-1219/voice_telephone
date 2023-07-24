@@ -1,105 +1,79 @@
-﻿# include <Siv3D.hpp> // OpenSiv3D v0.6.10
+﻿#include <Siv3D.hpp> // OpenSiv3D v0.6.10
+#include <vector>
+#include <complex>
+#include <thread>
+#include "FFT.h"
+#include "LPC.h"
+#include "GolombRiceCoding.h"
+#include "Network.h"
+#include "Mic.h"
+#include "Debug.h"
+#include "GraphPlot.h"
+#include "constant.h"
 
-void Main()
-{
-	// 背景の色を設定する | Set the background color
-	Scene::SetBackground(ColorF{ 0.6, 0.8, 0.7 });
 
-	// 画像ファイルからテクスチャを作成する | Create a texture from an image file
-	const Texture texture{ U"example/windmill.png" };
+VoiceNetwork::VoicePacket voice_packet = VoiceNetwork::VoicePacket();
 
-	// 絵文字からテクスチャを作成する | Create a texture from an emoji
-	const Texture emoji{ U"🦖"_emoji };
+void Main(){
+	Scene::SetBackground(BACKGROUND_COLOR);
+	Window::Resize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-	// 太文字のフォントを作成する | Create a bold font with MSDF method
-	const Font font{ FontMethod::MSDF, 48, Typeface::Bold };
-
-	// テキストに含まれる絵文字のためのフォントを作成し、font に追加する | Create a font for emojis in text and add it to font as a fallback
-	const Font emojiFont{ 48, Typeface::ColorEmoji };
-	font.addFallback(emojiFont);
-
-	// ボタンを押した回数 | Number of button presses
-	int32 count = 0;
-
-	// チェックボックスの状態 | Checkbox state
-	bool checked = false;
-
-	// プレイヤーの移動スピード | Player's movement speed
-	double speed = 200.0;
-
-	// プレイヤーの X 座標 | Player's X position
-	double playerPosX = 400;
-
-	// プレイヤーが右を向いているか | Whether player is facing right
-	bool isPlayerFacingRight = true;
-
-	while (System::Update())
-	{
-		// テクスチャを描く | Draw the texture
-		texture.draw(20, 20);
-
-		// テキストを描く | Draw text
-		font(U"Hello, Siv3D!🎮").draw(64, Vec2{ 20, 340 }, ColorF{ 0.2, 0.4, 0.8 });
-
-		// 指定した範囲内にテキストを描く | Draw text within a specified area
-		font(U"Siv3D (シブスリーディー) は、ゲームやアプリを楽しく簡単な C++ コードで開発できるフレームワークです。")
-			.draw(18, Rect{ 20, 430, 480, 200 }, Palette::Black);
-
-		// 長方形を描く | Draw a rectangle
-		Rect{ 540, 20, 80, 80 }.draw();
-
-		// 角丸長方形を描く | Draw a rounded rectangle
-		RoundRect{ 680, 20, 80, 200, 20 }.draw(ColorF{ 0.0, 0.4, 0.6 });
-
-		// 円を描く | Draw a circle
-		Circle{ 580, 180, 40 }.draw(Palette::Seagreen);
-
-		// 矢印を描く | Draw an arrow
-		Line{ 540, 330, 760, 260 }.drawArrow(8, SizeF{ 20, 20 }, ColorF{ 0.4 });
-
-		// 半透明の円を描く | Draw a semi-transparent circle
-		Circle{ Cursor::Pos(), 40 }.draw(ColorF{ 1.0, 0.0, 0.0, 0.5 });
-
-		// ボタン | Button
-		if (SimpleGUI::Button(U"count: {}"_fmt(count), Vec2{ 520, 370 }, 120, (checked == false)))
-		{
-			// カウントを増やす | Increase the count
-			++count;
-		}
-
-		// チェックボックス | Checkbox
-		SimpleGUI::CheckBox(checked, U"Lock \U000F033E", Vec2{ 660, 370 }, 120);
-
-		// スライダー | Slider
-		SimpleGUI::Slider(U"speed: {:.1f}"_fmt(speed), speed, 100, 400, Vec2{ 520, 420 }, 140, 120);
-
-		// 左キーが押されていたら | If left key is pressed
-		if (KeyLeft.pressed())
-		{
-			// プレイヤーが左に移動する | Player moves left
-			playerPosX = Max((playerPosX - speed * Scene::DeltaTime()), 60.0);
-			isPlayerFacingRight = false;
-		}
-
-		// 右キーが押されていたら | If right key is pressed
-		if (KeyRight.pressed())
-		{
-			// プレイヤーが右に移動する | Player moves right
-			playerPosX = Min((playerPosX + speed * Scene::DeltaTime()), 740.0);
-			isPlayerFacingRight = true;
-		}
-
-		// プレイヤーを描く | Draw the player
-		emoji.scaled(0.75).mirrored(isPlayerFacingRight).drawAt(playerPosX, 540);
+	if (System::EnumerateMicrophones().isEmpty()) {
+		throw Error{U"No microphone is connected"};
 	}
-}
 
-//
-// - Debug ビルド: プログラムの最適化を減らす代わりに、エラーやクラッシュ時に詳細な情報を得られます。
-//
-// - Release ビルド: 最大限の最適化でビルドします。
-//
-// - [デバッグ] メニュー → [デバッグの開始] でプログラムを実行すると、[出力] ウィンドウに詳細なログが表示され、エラーの原因を探せます。
-//
-// - Visual Studio を更新した直後は、プログラムのリビルド（[ビルド]メニュー → [ソリューションのリビルド]）が必要な場合があります。
-//
+#if DEBUG
+	Debug::show_system_mic();
+#endif
+
+	const Microphone mic{ MIC_INDEX, 48000, 5s, Loop::Yes, StartImmediately::Yes };
+	const size_t sr = mic.getSampleRate();
+	if (not mic.isRecording()) {
+		throw Error{U"Failed to start recording"};
+	}
+
+	const char* hostname = HOST_NAME;
+	Mic::MicInput mic_input = Mic::MicInput(mic, SAMPLES_LENGTH);
+	GraphPlot::SpectrumPlot spec_plot = GraphPlot::SpectrumPlot(Vec2{ 50, WINDOW_HEIGHT - 100}, 900, Palette::Black);
+	VoiceNetwork::SendPacket send_packet = VoiceNetwork::SendPacket(hostname, PORT, IP_TYPE, PROTOCOL);
+
+	int i = 0;
+
+	while (System::Update()) {
+		std::vector<std::complex<double>> f = mic_input.get_samples();
+		std::vector<double> real_f = CodingProcess::get_complex_to_real_vector(f);
+		VoiceNetwork::VoicePacket voice_packet = VoiceNetwork::VoicePacket();
+
+		/* Plot Power Spectorum fft */
+		CodingProcess::FFT fft = CodingProcess::FFT(f, sr);
+		std::vector<double> freq = fft.get_FFT_frequency();
+		std::vector<double> p_spec = fft.get_power_spectrum();
+		//std::vector<double> p_spec = fft.get_amp_spectrum();
+		spec_plot.plot(freq, p_spec);
+
+		CodingProcess::LPCEncrypt lpc_e = CodingProcess::LPCEncrypt(real_f, LPC_COEFFICIENT_DIM);
+		std::vector<double> pc = lpc_e.get_prediction_coefficient();
+		std::vector<double> pe = lpc_e.get_predict_error();
+
+		/* Golomb-Rice Encoding */
+		CodingProcess::GolombRiceEncode gr_encode = CodingProcess::GolombRiceEncode(pe, GOLOMB_RICE_DIVISOR, GOLOMB_RICE_SCALE);
+		std::vector<unsigned char> pe_encode = gr_encode.get_encode();
+		std::vector<unsigned char> pc_encode = VoiceNetwork::convert_double_to_bytes(pc);
+		Print << U"Golomb RIce Encode Length: " << pe_encode.size();
+		voice_packet.pc = pc_encode;
+		voice_packet.pe = pe_encode;
+		voice_packet.pe_length = pe_encode.size();
+		send_packet.send(voice_packet);
+
+		/* Golomb-Rice Decoding */
+		/*CodingProcess::GolombRiceDecode gr_decode = CodingProcess::GolombRiceDecode(pe_encode, GOLOMB_RICE_DIVISOR, GOLOMB_RICE_SCALE);
+		std::vector<double> pe_decode = gr_decode.get_decode();*/
+
+		/* LPC decrypt */
+		/*CodingProcess::LPCDecrypt lpc_d = CodingProcess::LPCDecrypt(pc, pe);
+		std::vector<double> lpc_f = lpc_d.get_f_decrypt();
+		std::vector<std::complex<double>> comp_f = CodingProcess::get_real_to_complex_vector(lpc_f);*/
+		//i++;
+	}
+	send_packet.close_socket();
+}
