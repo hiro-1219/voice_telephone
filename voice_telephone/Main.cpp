@@ -13,13 +13,24 @@
 
 
 VoiceNetwork::VoicePacket voice_packet = VoiceNetwork::VoicePacket();
-std::vector<std::vector<double>> play_f;
+std::vector<double> play_f;
 
 void speaker_output_thread(AudioInOut::SpeakerOutput speaker_out) {
+	VoiceNetwork::RecvPacket recv_packet = VoiceNetwork::RecvPacket(12346);
 	while (1) {
+		VoiceNetwork::VoicePacket voice_packet = recv_packet.recv();
+		std::vector<double> pc_decode = VoiceNetwork::convert_bytes_to_double(voice_packet.pc);
+
+		/* Golomb-Rice Decoding */
+		CodingProcess::GolombRiceDecode gr_decode = CodingProcess::GolombRiceDecode(voice_packet.pe, GOLOMB_RICE_DIVISOR, GOLOMB_RICE_SCALE);
+		std::vector<double> pe_decode = gr_decode.get_decode();
+
+		/* LPC decrypt */
+		CodingProcess::LPCDecrypt lpc_d = CodingProcess::LPCDecrypt(pc_decode, pe_decode);
+		play_f = lpc_d.get_f_decrypt();
+
 		if (!play_f.empty()) {
-			speaker_out.play(play_f[0]);
-			play_f.erase(play_f.begin());
+			speaker_out.play(play_f);
 		}
 	}
 }
@@ -29,7 +40,6 @@ void mic_input_thread(AudioInOut::MicInput mic_input, int sr) {
 	const char* hostname = HOST_NAME;
 	GraphPlot::SpectrumPlot spec_plot = GraphPlot::SpectrumPlot(Vec2{ 50, WINDOW_HEIGHT - 100 }, 900, Palette::Black);
 
-	VoiceNetwork::SetupWSAStartup wsa_setup = VoiceNetwork::SetupWSAStartup();
 	VoiceNetwork::SendPacket send_packet = VoiceNetwork::SendPacket(hostname, PORT);
 
 	while (System::Update()) {
@@ -58,21 +68,14 @@ void mic_input_thread(AudioInOut::MicInput mic_input, int sr) {
 		voice_packet.pe_length = pe_encode.size();
 		send_packet.send(voice_packet);
 
+		//play_f = real_f;
 		
 		
-		/* Golomb-Rice Decoding */
-		CodingProcess::GolombRiceDecode gr_decode = CodingProcess::GolombRiceDecode(pe_encode, GOLOMB_RICE_DIVISOR, GOLOMB_RICE_SCALE);
-		std::vector<double> pe_decode = gr_decode.get_decode();
-
-		/* LPC decrypt */
-		CodingProcess::LPCDecrypt lpc_d = CodingProcess::LPCDecrypt(pc, pe);
-		std::vector<double> lpc_f = lpc_d.get_f_decrypt();
 		//std::vector<std::complex<double>> comp_f = CodingProcess::get_real_to_complex_vector(lpc_f);
-		play_f.push_back(lpc_f);
+		//play_f = lpc_f;
 	}
 	send_packet.close_socket();
 	//recv_packet.close_socket();
-	wsa_setup.close_wsa();
 }
 
 void Main(){
@@ -95,10 +98,11 @@ void Main(){
 	AudioInOut::MicInput mic_input = AudioInOut::MicInput(mic, SAMPLES_LENGTH);
 	AudioInOut::SpeakerOutput speaker_out = AudioInOut::SpeakerOutput();
 
+	VoiceNetwork::SetupWSAStartup wsa_setup = VoiceNetwork::SetupWSAStartup();
 	std::thread micInputThread(mic_input_thread, mic_input, sr);
 	std::thread speakerOutputThread(speaker_output_thread, speaker_out);
 	micInputThread.join();
 	speakerOutputThread.join();
-
 	speaker_out.close_speaker();
+	wsa_setup.close_wsa();
 }

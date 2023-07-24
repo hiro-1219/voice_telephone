@@ -70,7 +70,7 @@ void AudioInOut::SpeakerOutput::play(std::vector<double> audio_vec) {
 		waveOutClose(this->handle_wave_out);
 		return;
 	}
-	Sleep(10);
+	Sleep(50);
 	//while (waveOutClose(this->handle_wave_out) == WAVERR_STILLPLAYING);
 }
 

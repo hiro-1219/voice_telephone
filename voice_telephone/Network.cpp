@@ -74,15 +74,20 @@ VoiceNetwork::VoicePacket VoiceNetwork::RecvPacket::recv() {
 	memset(buffer, 0, RECV_SIZE);
 	int client_addr_size = sizeof(this->client_addr);
 	int buffer_size = recvfrom(this->sock, buffer, RECV_SIZE, 0, (sockaddr*)&this->client_addr, &client_addr_size);
-	std::vector<unsigned char> buffer_vec(buffer, buffer + sizeof(buffer) - 1);
-	Print << U"recv: " << buffer[0];
+	if (buffer_size == -1) {
+		voice_packet.pe_length = -1;
+	}
+	else {
+		voice_packet = this->convert_buffer_to_voice_packet(buffer, buffer_size);
+		Print << U"recv: " << voice_packet.pe_length;
+	}
 	return voice_packet;
 }
 
 VoiceNetwork::VoicePacket VoiceNetwork::RecvPacket::convert_buffer_to_voice_packet(char* buffer, int buffer_size) {
 	VoiceNetwork::VoicePacket voice_packet;
-	std::vector<unsigned char> vp_pc(buffer, buffer + 160 - 1);
-	std::vector<unsigned char> vp_pe(buffer + 160, buffer + buffer_size - 1);
+	std::vector<unsigned char> vp_pc(buffer, buffer + LPC_COEFFICIENT_DIM * 8 - 1);
+	std::vector<unsigned char> vp_pe(buffer + LPC_COEFFICIENT_DIM * 8, buffer + buffer_size - 1);
 	int pe_length = vp_pe.size();
 	voice_packet.pc = vp_pc;
 	voice_packet.pe = vp_pe;
