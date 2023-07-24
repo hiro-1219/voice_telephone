@@ -21,6 +21,7 @@ namespace AudioInOut {
 	public:
 		SpeakerOutput();
 		void play(std::vector<double> audio_vec);
+		void close_speaker();
 	private:
 		WAVEFORMATEX waveformatx;
 		HWAVEOUT handle_wave_out;

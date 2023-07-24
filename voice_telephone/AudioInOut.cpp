@@ -39,14 +39,14 @@ void AudioInOut::SpeakerOutput::setup_speaker() {
 	this->waveformatx.nBlockAlign = sizeof(short);
 	this->waveformatx.wBitsPerSample = sizeof(short) * 8;
 	this->waveformatx.cbSize = 0;
-}
-
-void AudioInOut::SpeakerOutput::play(std::vector<double> audio_vec) {
-	HWAVEOUT h_wave_out;
-	if (waveOutOpen(&h_wave_out, WAVE_MAPPER, &this->waveformatx, 0, 0, CALLBACK_NULL) != MMSYSERR_NOERROR) {
+	if (waveOutOpen(&this->handle_wave_out, WAVE_MAPPER, &this->waveformatx, 0, 0, CALLBACK_NULL) != MMSYSERR_NOERROR) {
 		Print << U"[-] Error: Failed to open audio device.";
 		std::cerr << "[-] Error: Failed to open audio device." << "\n";
 	}
+}
+
+void AudioInOut::SpeakerOutput::play(std::vector<double> audio_vec) {
+
 	short buffer[SAMPLES_LENGTH];
 	for (int i = 0; i < SAMPLES_LENGTH; i++) {
 		buffer[i] = static_cast<short>(audio_vec[i] * SHRT_MAX);
@@ -59,21 +59,24 @@ void AudioInOut::SpeakerOutput::play(std::vector<double> audio_vec) {
 	waveHeader.lpNext = nullptr;
 	waveHeader.reserved = 0;
 
-	if (waveOutPrepareHeader(h_wave_out, &waveHeader, sizeof(WAVEHDR)) != MMSYSERR_NOERROR) {
+	if (waveOutPrepareHeader(this->handle_wave_out, &waveHeader, sizeof(WAVEHDR)) != MMSYSERR_NOERROR) {
 		std::cerr << "[-] Failed to prepare audio header." << "\n";
-		waveOutClose(h_wave_out);
+		waveOutClose(this->handle_wave_out);
 		return;
 	}
-
-
-	if (waveOutWrite(h_wave_out, &waveHeader, sizeof(WAVEHDR)) != MMSYSERR_NOERROR) {
+	if (waveOutWrite(this->handle_wave_out, &waveHeader, sizeof(WAVEHDR)) != MMSYSERR_NOERROR) {
 		std::cerr << "[-] Failed to write audio data." << "\n";
-		waveOutUnprepareHeader(h_wave_out, &waveHeader, sizeof(WAVEHDR));
-		waveOutClose(h_wave_out);
+		waveOutUnprepareHeader(this->handle_wave_out, &waveHeader, sizeof(WAVEHDR));
+		waveOutClose(this->handle_wave_out);
 		return;
 	}
+	Sleep(10);
+	//while (waveOutClose(this->handle_wave_out) == WAVERR_STILLPLAYING);
+}
 
-	while (waveOutClose(h_wave_out) == WAVERR_STILLPLAYING) ;
+
+void AudioInOut::SpeakerOutput::close_speaker() {
+	waveOutClose(this->handle_wave_out);
 }
 
 

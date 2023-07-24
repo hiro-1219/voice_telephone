@@ -13,30 +13,21 @@
 
 
 VoiceNetwork::VoicePacket voice_packet = VoiceNetwork::VoicePacket();
-std::vector<std::vector<double>> play_f(BUFFER_NUM, std::vector<double>(SAMPLES_LENGTH));
+std::vector<std::vector<double>> play_f;
 
-void Main(){
-	Scene::SetBackground(BACKGROUND_COLOR);
-	Window::Resize(WINDOW_WIDTH, WINDOW_HEIGHT);
-
-	if (System::EnumerateMicrophones().isEmpty()) {
-		throw Error{U"No microphone is connected"};
+void speaker_output_thread(AudioInOut::SpeakerOutput speaker_out) {
+	while (1) {
+		if (!play_f.empty()) {
+			speaker_out.play(play_f[0]);
+			play_f.erase(play_f.begin());
+		}
 	}
+}
 
-#if DEBUG
-	Debug::show_system_mic();
-#endif
-
-	const Microphone mic{ MIC_INDEX, SAMPLE_RATE, 5s, Loop::Yes, StartImmediately::Yes };
-	const size_t sr = mic.getSampleRate();
-	if (not mic.isRecording()) {
-		throw Error{U"Failed to start recording"};
-	}
+void mic_input_thread(AudioInOut::MicInput mic_input, int sr) {
 
 	const char* hostname = HOST_NAME;
-	AudioInOut::MicInput mic_input = AudioInOut::MicInput(mic, SAMPLES_LENGTH);
-    AudioInOut::SpeakerOutput speaker_out = AudioInOut::SpeakerOutput();
-	GraphPlot::SpectrumPlot spec_plot = GraphPlot::SpectrumPlot(Vec2{ 50, WINDOW_HEIGHT - 100}, 900, Palette::Black);
+	GraphPlot::SpectrumPlot spec_plot = GraphPlot::SpectrumPlot(Vec2{ 50, WINDOW_HEIGHT - 100 }, 900, Palette::Black);
 
 	VoiceNetwork::SetupWSAStartup wsa_setup = VoiceNetwork::SetupWSAStartup();
 	VoiceNetwork::SendPacket send_packet = VoiceNetwork::SendPacket(hostname, PORT);
@@ -67,8 +58,8 @@ void Main(){
 		voice_packet.pe_length = pe_encode.size();
 		send_packet.send(voice_packet);
 
-
-		speaker_out.play(real_f);
+		
+		
 		/* Golomb-Rice Decoding */
 		CodingProcess::GolombRiceDecode gr_decode = CodingProcess::GolombRiceDecode(pe_encode, GOLOMB_RICE_DIVISOR, GOLOMB_RICE_SCALE);
 		std::vector<double> pe_decode = gr_decode.get_decode();
@@ -77,10 +68,37 @@ void Main(){
 		CodingProcess::LPCDecrypt lpc_d = CodingProcess::LPCDecrypt(pc, pe);
 		std::vector<double> lpc_f = lpc_d.get_f_decrypt();
 		//std::vector<std::complex<double>> comp_f = CodingProcess::get_real_to_complex_vector(lpc_f);
-
-		//speaker_out.play(lpc_f);
+		play_f.push_back(lpc_f);
 	}
 	send_packet.close_socket();
 	//recv_packet.close_socket();
 	wsa_setup.close_wsa();
+}
+
+void Main(){
+	Scene::SetBackground(BACKGROUND_COLOR);
+	Window::Resize(WINDOW_WIDTH, WINDOW_HEIGHT);
+
+	if (System::EnumerateMicrophones().isEmpty()) {
+		throw Error{U"No microphone is connected"};
+	}
+
+#if DEBUG
+	Debug::show_system_mic();
+#endif
+
+	const Microphone mic{ MIC_INDEX, SAMPLE_RATE, 5s, Loop::Yes, StartImmediately::Yes };
+	const size_t sr = mic.getSampleRate();
+	if (not mic.isRecording()) {
+		throw Error{U"Failed to start recording"};
+	}
+	AudioInOut::MicInput mic_input = AudioInOut::MicInput(mic, SAMPLES_LENGTH);
+	AudioInOut::SpeakerOutput speaker_out = AudioInOut::SpeakerOutput();
+
+	std::thread micInputThread(mic_input_thread, mic_input, sr);
+	std::thread speakerOutputThread(speaker_output_thread, speaker_out);
+	micInputThread.join();
+	speakerOutputThread.join();
+
+	speaker_out.close_speaker();
 }
