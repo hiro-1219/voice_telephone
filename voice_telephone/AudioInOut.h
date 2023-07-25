@@ -1,8 +1,6 @@
 ﻿#pragma once
 
 #include <Siv3D.hpp>
-//#include <Windows.h>
-//#include <locale.h>
 #include <vector>
 #include <complex>
 #include "constant.h"

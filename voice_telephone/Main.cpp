@@ -29,7 +29,8 @@ void speaker_output_thread(AudioInOut::SpeakerOutput speaker_out, int sr) {
 		CodingProcess::LPCDecrypt lpc_d = CodingProcess::LPCDecrypt(pc_decode, pe_decode);
 		play_f = lpc_d.get_f_decrypt();
 
-		if (!play_f.empty()) {
+		/* speaker */
+		if (!play_f.empty() && PLAY) {
 			speaker_out.play(play_f);
 		}
 	}
@@ -52,7 +53,6 @@ void mic_input_thread(AudioInOut::MicInput mic_input, int sr) {
 		CodingProcess::FFT fft = CodingProcess::FFT(f, sr);
 		std::vector<double> freq = fft.get_FFT_frequency();
 		std::vector<double> p_spec = fft.get_power_spectrum();
-		//std::vector<double> p_spec = fft.get_amp_spectrum();
 		spec_plot.plot(freq, p_spec);
 
 		CodingProcess::LPCEncrypt lpc_e = CodingProcess::LPCEncrypt(real_f, LPC_COEFFICIENT_DIM);
@@ -69,8 +69,6 @@ void mic_input_thread(AudioInOut::MicInput mic_input, int sr) {
 		voice_packet.pe_length = pe_encode.size();
 		send_packet.send(voice_packet);
 
-		//play_f = real_f;
-
 		if (!play_f.empty()) {
 			std::vector<std::complex<double>> play_f_complex = CodingProcess::get_real_to_complex_vector(play_f);
 			CodingProcess::FFT fft_play = CodingProcess::FFT(play_f_complex, sr);
@@ -78,12 +76,8 @@ void mic_input_thread(AudioInOut::MicInput mic_input, int sr) {
 			std::vector<double> p_spec_play = fft_play.get_power_spectrum();
 			play_plot.plot(freq_play, p_spec_play);
 		}
-
-		//std::vector<std::complex<double>> comp_f = CodingProcess::get_real_to_complex_vector(lpc_f);
-		//play_f = lpc_f;
 	}
 	send_packet.close_socket();
-	//recv_packet.close_socket();
 }
 
 void Main(){

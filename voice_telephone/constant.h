@@ -16,7 +16,8 @@
 #define RECV_PORT 12346
 #define RECV_SIZE 7000
 
-#define MIC_INDEX 1
+#define MIC_INDEX 2
 #define BUFFER_NUM 10
 
 #define DEBUG false
+#define PLAY true

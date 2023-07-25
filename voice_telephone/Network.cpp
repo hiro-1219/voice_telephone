@@ -42,10 +42,10 @@ void VoiceNetwork::SendPacket::close_socket() {
 
 void VoiceNetwork::SendPacket::send(VoiceNetwork::VoicePacket voice_packet){
 	std::vector<unsigned char> send_packet_vec = voice_packet.pc;
-	Print << U"size pc: " << send_packet_vec.size();
 	send_packet_vec.insert(send_packet_vec.end(), voice_packet.pe.begin(), voice_packet.pe.end());
-	//send_packet_vec.insert(send_packet_vec.end(), end.begin(), end.end());
+#if DEBUG
 	Print << U"send: " << LPC_COEFFICIENT_DIM * 8 + voice_packet.pe_length;
+#endif
 	sendto(this->sock, reinterpret_cast<const char*>(send_packet_vec.data()), LPC_COEFFICIENT_DIM * 8 + voice_packet.pe_length, 0, (struct sockaddr*)&this->send_addr, sizeof(this->send_addr));
 }
 
@@ -79,7 +79,9 @@ VoiceNetwork::VoicePacket VoiceNetwork::RecvPacket::recv() {
 	}
 	else {
 		voice_packet = this->convert_buffer_to_voice_packet(buffer, buffer_size);
+#if DEBUG
 		Print << U"recv: " << voice_packet.pe_length;
+#endif
 	}
 	return voice_packet;
 }
